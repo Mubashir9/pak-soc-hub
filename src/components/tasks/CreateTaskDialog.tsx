@@ -1,0 +1,258 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Plus } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import type { Task } from '@/lib/mockData';
+
+const formSchema = z.object({
+    title: z.string().min(2, {
+        message: "Task title must be at least 2 characters.",
+    }),
+    status: z.enum(["todo", "in_progress", "completed"]),
+    assigned_to: z.string().optional(),
+    description: z.string().optional(),
+    priority: z.enum(["low", "medium", "high"]),
+    category: z.enum(["general", "content", "logistics", "food", "props", "sponsors"]),
+});
+
+interface CreateTaskDialogProps {
+    eventId?: string; // Optional if editing
+    taskToEdit?: Task;
+    trigger?: React.ReactNode;
+    onTaskCreated?: (task: Task) => void;
+    onTaskUpdated?: (task: Task) => void;
+}
+
+export function CreateTaskDialog({
+    eventId,
+    taskToEdit,
+    trigger,
+    onTaskCreated,
+    onTaskUpdated
+}: CreateTaskDialogProps) {
+    const [open, setOpen] = useState(false);
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            title: taskToEdit?.title || "",
+            status: taskToEdit?.status || "todo",
+            assigned_to: taskToEdit?.assigned_to || "",
+            description: taskToEdit?.description || "",
+            priority: taskToEdit?.priority || "medium",
+            category: taskToEdit?.category || "general",
+        },
+    });
+
+    function onSubmit(values: z.infer<typeof formSchema>) {
+        if (taskToEdit) {
+            const updatedTask: Task = {
+                ...taskToEdit,
+                title: values.title,
+                status: values.status as Task['status'],
+                assigned_to: values.assigned_to || "Unassigned",
+                priority: values.priority as Task['priority'],
+                category: values.category as Task['category'],
+                description: values.description,
+            };
+            if (onTaskUpdated) {
+                onTaskUpdated(updatedTask);
+            }
+        } else if (eventId) {
+            const newTask: Task = {
+                id: Math.random().toString(36).substr(2, 9),
+                event_id: eventId,
+                title: values.title,
+                status: values.status as Task['status'],
+                assigned_to: values.assigned_to || "Unassigned",
+                priority: values.priority as Task['priority'],
+                category: values.category as Task['category'],
+                created_at: new Date().toISOString(),
+                description: values.description,
+            };
+
+            if (onTaskCreated) {
+                onTaskCreated(newTask);
+            }
+        }
+
+        setOpen(false);
+        form.reset();
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                {trigger ? trigger : (
+                    <Button size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> Add Task
+                    </Button>
+                )}
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>{taskToEdit ? "Edit Task" : "Add New Task"}</DialogTitle>
+                    <DialogDescription>
+                        {taskToEdit ? "Update task details." : "Create a new task for this event."}
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="title"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Title</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Design posters" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="assigned_to"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Assignee</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="John Doe" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="status"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select status" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="todo">To Do</SelectItem>
+                                            <SelectItem value="in_progress">In Progress</SelectItem>
+                                            <SelectItem value="completed">Completed</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="priority"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Priority</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Priority" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="low">Low</SelectItem>
+                                                <SelectItem value="medium">Medium</SelectItem>
+                                                <SelectItem value="high">High</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Category" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="general">General</SelectItem>
+                                                <SelectItem value="content">Content</SelectItem>
+                                                <SelectItem value="logistics">Logistics</SelectItem>
+                                                <SelectItem value="food">Food</SelectItem>
+                                                <SelectItem value="props">Props</SelectItem>
+                                                <SelectItem value="sponsors">Sponsors</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Task details..."
+                                            className="resize-none"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button type="submit">{taskToEdit ? "Save Changes" : "Create Task"}</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
