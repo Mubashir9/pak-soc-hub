@@ -1,12 +1,12 @@
 <div align="center">
   <img src="public/pakSocMascot.png" alt="PakSoc Mascot" width="150" height="auto"/>
-  <h1>PakSoc Events Management Platform</h1>
-  <p>A comprehensive, role-based platform for university society management, built with modern web technologies.</p>
+  <h1>PakSoc Hub</h1>
+  <p>A comprehensive, role-based platform for Pak@MQ society management, built with modern web technologies.</p>
 </div>
 
 ## 📌 What is the Project?
 
-**PakSoc Events** is a specialized management portal designed for the executive team of the Pakistan Society (PakSoc). It serves as a unified hub for planning events, managing tasks, tracking budgets, and coordinating team efforts. Access is strictly controlled via domain-restricted Google OAuth (`@students.mq.edu.au`), ensuring only authorized university students and executives can access the system.
+**PakSoc Hub** is a specialized management portal designed for the executive team of the Pakistan Society (Pak@MQ). It serves as a unified hub for planning events, managing tasks, tracking budgets, and coordinating team efforts. Access is strictly controlled via domain-restricted Google OAuth (`@students.mq.edu.au`), ensuring only authorized university students and executives can access the system.
 
 ## 🎯 The Problem It Solves
 
