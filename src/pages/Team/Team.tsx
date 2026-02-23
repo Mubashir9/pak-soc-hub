@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { TeamMember } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+
 import { Mail, Phone, Award } from 'lucide-react';
 
 export default function Team() {
@@ -38,9 +38,7 @@ export default function Team() {
                 {teamMembers.map((member) => (
                     <Card key={member.id} className="overflow-hidden">
                         <CardHeader className="bg-slate-100/50 dark:bg-slate-800/50 pb-8 relative">
-                            <div className="absolute top-4 right-4">
-                                <Badge variant="secondary">{member.role}</Badge>
-                            </div>
+
                             <div className="flex justify-center">
                                 <Avatar className="h-24 w-24 border-4 border-background shadow-sm">
                                     <AvatarImage src={member.avatar} alt={member.name} />
