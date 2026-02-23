@@ -7,6 +7,7 @@ import type { Event, Task, Meeting } from '@/types';
 import { format } from 'date-fns';
 import { Calendar, MapPin, Users, Clock, Video } from 'lucide-react';
 import { DashboardTaskList } from '@/features/tasks/components/DashboardTaskList';
+import { StatusBadge } from '@/components/common/StatusBadge';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -45,7 +46,6 @@ export default function Dashboard() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-primary">Dashboard</h1>
-                <p className="text-muted-foreground">Welcome back, Admin</p>
             </div>
 
             {upcomingMeeting && (
@@ -119,10 +119,14 @@ export default function Dashboard() {
                                         <p className="text-sm text-muted-foreground">
                                             {event.location}
                                         </p>
-                                        <p className="text-xs text-muted-foreground capitalize">
-                                            [{event.status}]
-                                            {event.status !== 'completed' && event.status !== 'cancelled' && event.budget_spent > 0 && ` • $${event.budget_spent.toLocaleString()} spent`}
-                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <StatusBadge status={event.status} className="text-[10px] h-4 px-1.5" />
+                                            {event.status !== 'completed' && event.status !== 'cancelled' && event.budget_spent > 0 && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    • ${event.budget_spent.toLocaleString()} spent
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-4 mt-1">
                                         <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
