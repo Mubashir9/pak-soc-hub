@@ -52,7 +52,7 @@ export function DashboardTaskList({ tasks, events, onTaskDeleted }: DashboardTas
     const totalActive = filteredTasks.length;
 
     return (
-        <Card className="col-span-3 flex flex-col h-[450px]">
+        <Card className="col-span-3 flex flex-col h-[360px]">
             <CardHeader className="flex flex-col space-y-4 shrink-0">
                 <div className="flex flex-row items-center justify-between">
                     <CardTitle>Tasks</CardTitle>

@@ -103,7 +103,7 @@ export default function Dashboard() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {/* Recent Events / Activity */}
-                <Card className="col-span-4 flex flex-col h-[450px]">
+                <Card className="col-span-4 flex flex-col h-[360px]">
                     <CardHeader className="flex flex-row items-center justify-between shrink-0">
                         <CardTitle>Upcoming Events</CardTitle>
                         <div className="text-sm text-muted-foreground">
