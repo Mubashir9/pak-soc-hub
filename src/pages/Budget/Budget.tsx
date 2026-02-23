@@ -24,8 +24,15 @@ import {
     Cell
 } from 'recharts';
 
+interface BudgetSummary {
+    allocated?: number;
+    spent?: number;
+    event_name?: string;
+    [key: string]: unknown;
+}
+
 export default function Budget() {
-    const [summary, setSummary] = useState<any[]>([]);
+    const [summary, setSummary] = useState<BudgetSummary[]>([]);
     const [budgetItems, setBudgetItems] = useState<(BudgetItem & { event_name?: string })[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -39,6 +46,7 @@ export default function Budget() {
             if (summaryRes.data) setSummary(summaryRes.data);
             if (itemsRes.data) {
                 // Flatten the event name from the joined query
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const flattenedItems = itemsRes.data.map((item: any) => ({
                     ...item,
                     event_name: item.events?.name
@@ -149,6 +157,7 @@ export default function Budget() {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
                                     outerRadius={80}
                                     fill="#8884d8"
@@ -158,6 +167,7 @@ export default function Budget() {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
                             </PieChart>
                         </ResponsiveContainer>

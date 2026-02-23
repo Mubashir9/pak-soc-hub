@@ -12,6 +12,7 @@ import Meetings from './pages/Meetings';
 import MeetingDetail from './pages/MeetingDetail';
 import Sponsors from './pages/Sponsors';
 import Archive from './pages/Archive';
+import Bugs from './pages/Bugs/Bugs';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="meetings/:id" element={<MeetingDetail />} />
             <Route path="sponsors" element={<Sponsors />} />
             <Route path="archive" element={<Archive />} />
+            <Route path="bugs" element={<Bugs />} />
           </Route>
         </Route>
       </Routes>

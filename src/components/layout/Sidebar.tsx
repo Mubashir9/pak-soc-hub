@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, Users, Calendar, Handshake, Archive, Settings, Banknote } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, Users, Calendar, Handshake, Archive, Bug, Banknote } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 export const NAV_ITEMS = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -11,6 +10,7 @@ export const NAV_ITEMS = [
     { name: 'Budget', href: '/budget', icon: Banknote },
     { name: 'Team', href: '/team', icon: Users },
     { name: 'Archive', href: '/archive', icon: Archive },
+    { name: 'Bugs & Issues', href: '/bugs', icon: Bug },
 ];
 
 export function Sidebar({ className }: { className?: string }) {
@@ -40,17 +40,6 @@ export function Sidebar({ className }: { className?: string }) {
                                 {item.name}
                             </NavLink>
                         ))}
-                    </div>
-                </div>
-                <div className="px-3 py-2">
-                    <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-                        Settings
-                    </h2>
-                    <div className="space-y-1">
-                        <Button variant="ghost" className="w-full justify-start">
-                            <Settings className="mr-2 h-4 w-4" />
-                            General
-                        </Button>
                     </div>
                 </div>
             </div>

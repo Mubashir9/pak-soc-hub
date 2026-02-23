@@ -86,3 +86,16 @@ export interface ContentIdea {
     event_id: string;
     created_at: string;
 }
+
+export type BugStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+export type BugPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export interface BugIssue {
+    id: string;
+    title: string;
+    description: string;
+    status: BugStatus;
+    priority: BugPriority;
+    reported_by: string;
+    created_at: string;
+}

@@ -14,6 +14,7 @@ export default function Login() {
             setError(null);
             await signInWithGoogle();
             // We don't need to setIsLoading(false) because the page will redirect
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             setError(err.message || 'An error occurred during login');
             setIsLoading(false);

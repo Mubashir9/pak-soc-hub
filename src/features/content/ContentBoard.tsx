@@ -29,6 +29,7 @@ export function ContentBoard({ eventId }: ContentBoardProps) {
 
     useEffect(() => {
         loadContent();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId]);
 
     const loadContent = async () => {

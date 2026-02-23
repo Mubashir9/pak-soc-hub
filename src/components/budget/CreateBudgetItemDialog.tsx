@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
 import * as z from "zod";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -57,7 +58,7 @@ export function CreateBudgetItemDialog({
     const [open, setOpen] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema) as any,
+        resolver: zodResolver(formSchema) as unknown as Resolver<z.infer<typeof formSchema>>,
         defaultValues: {
             description: "",
             category: "General",

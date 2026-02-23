@@ -98,6 +98,17 @@ from events e
 left join budget_items b on e.id = b.event_id
 group by e.id, e.name, e.budget_total;
 
+-- BUGS AND ISSUES TABLE
+create table bugs_and_issues (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  description text not null,
+  status text not null check (status in ('open', 'in_progress', 'resolved', 'closed')) default 'open',
+  priority text not null check (priority in ('low', 'medium', 'high', 'critical')) default 'medium',
+  reported_by text not null,
+  created_at timestamp with time zone default now()
+);
+
 -- RLS POLICIES (Assuming open access for now as per previous "no RBAC" requirement, but tables need policies to be queried from edge if RLS is enabled)
 -- Only run these if you enable RLS on the tables.
 
@@ -108,6 +119,7 @@ alter table budget_items enable row level security;
 alter table meetings enable row level security;
 alter table content_ideas enable row level security;
 alter table team_members enable row level security;
+alter table bugs_and_issues enable row level security;
 
 create policy "Enable all access for all users" on events for all using (true) with check (true);
 create policy "Enable all access for all users" on tasks for all using (true) with check (true);
@@ -116,4 +128,5 @@ create policy "Enable all access for all users" on budget_items for all using (t
 create policy "Enable all access for all users" on meetings for all using (true) with check (true);
 create policy "Enable all access for all users" on content_ideas for all using (true) with check (true);
 create policy "Enable all access for all users" on team_members for all using (true) with check (true);
+create policy "Enable all access for all users" on bugs_and_issues for all using (true) with check (true);
 
