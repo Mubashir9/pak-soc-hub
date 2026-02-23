@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2, Plus } from "lucide-react";
-import type { InventoryItem, InventoryStatus } from "@/types";
+import type { InventoryItem } from "@/types";
 import { supabase } from "@/lib/supabase";
 
 import { CreateInventoryItemDialog } from "@/components/inventory/CreateInventoryItemDialog";
