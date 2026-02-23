@@ -4,20 +4,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Task } from '@/types';
 
-import { Calendar, User, Edit2 } from 'lucide-react';
+import { Calendar, User, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
+import { supabase } from '@/lib/supabase';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TaskCardProps {
     task: Task;
     index: number;
     onTaskUpdated?: (task: Task) => void;
+    onTaskDeleted?: (taskId: string) => void;
     eventName?: string;
 }
 
-export function TaskCard({ task, index, onTaskUpdated, eventName }: TaskCardProps) {
+export function TaskCard({ task, index, onTaskUpdated, onTaskDeleted, eventName }: TaskCardProps) {
     const isHighPriority = task.priority === 'high';
 
     return (
@@ -50,20 +63,62 @@ export function TaskCard({ task, index, onTaskUpdated, eventName }: TaskCardProp
                                 <CardTitle className="text-sm font-medium leading-tight">
                                     {task.title}
                                 </CardTitle>
-                                <CreateTaskDialog
-                                    taskToEdit={task}
-                                    onTaskUpdated={onTaskUpdated}
-                                    trigger={
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
-                                            aria-label="Edit task"
-                                        >
-                                            <Edit2 className="h-3 w-3" />
-                                        </Button>
-                                    }
-                                />
+                                <div className="flex gap-1">
+                                    <CreateTaskDialog
+                                        taskToEdit={task}
+                                        onTaskUpdated={onTaskUpdated}
+                                        trigger={
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+                                                aria-label="Edit task"
+                                            >
+                                                <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                        }
+                                    />
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                                                aria-label="Delete task"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will permanently delete the task "{task.title}". This action cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={async () => {
+                                                        const { error } = await supabase
+                                                            .from('tasks')
+                                                            .delete()
+                                                            .eq('id', task.id);
+
+                                                        if (error) {
+                                                            console.error("Error deleting task:", error);
+                                                        } else {
+                                                            onTaskDeleted?.(task.id);
+                                                        }
+                                                    }}
+                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                >
+                                                    Delete
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent className="p-3 pt-2 text-xs text-muted-foreground">

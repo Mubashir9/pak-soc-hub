@@ -34,6 +34,10 @@ export default function Dashboard() {
 
 
 
+    const handleTaskDeleted = (taskId: string) => {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+    };
+
     const totalBudget = events.reduce((sum, e) => sum + e.budget_total, 0);
     const totalSpent = events.reduce((sum, e) => sum + e.budget_spent, 0);
     const budgetPercentage = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
@@ -143,6 +147,7 @@ export default function Dashboard() {
                 <DashboardTaskList
                     tasks={tasks}
                     events={events}
+                    onTaskDeleted={handleTaskDeleted}
                 />
             </div>
         </div>

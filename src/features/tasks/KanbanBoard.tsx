@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 interface KanbanBoardProps {
     tasks: Task[];
     onTaskUpdated?: (task: Task) => void;
+    onTaskDeleted?: (taskId: string) => void;
     eventMap?: Record<string, string>; // eventId -> eventName
 }
 
@@ -16,7 +17,7 @@ const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
     { id: 'completed', title: 'Completed', color: 'bg-green-50/50' },
 ];
 
-export function KanbanBoard({ tasks: initialTasks, onTaskUpdated, eventMap }: KanbanBoardProps) {
+export function KanbanBoard({ tasks: initialTasks, onTaskUpdated, onTaskDeleted, eventMap }: KanbanBoardProps) {
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
 
@@ -88,6 +89,7 @@ export function KanbanBoard({ tasks: initialTasks, onTaskUpdated, eventMap }: Ka
                                                 task={task}
                                                 index={index}
                                                 onTaskUpdated={onTaskUpdated}
+                                                onTaskDeleted={onTaskDeleted}
                                                 eventName={eventMap?.[task.event_id]}
                                             />
 

@@ -88,6 +88,10 @@ export default function EventDetail() {
         }
     };
 
+    const handleTaskDeleted = (taskId: string) => {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+    };
+
     const handleEventUpdated = (updatedEvent: Event) => {
         setEvent(updatedEvent);
     };
@@ -200,7 +204,7 @@ export default function EventDetail() {
                             showEventFilter={false}
                         />
                     </div>
-                    <KanbanBoard tasks={filteredTasks} onTaskUpdated={handleTaskUpdated} />
+                    <KanbanBoard tasks={filteredTasks} onTaskUpdated={handleTaskUpdated} onTaskDeleted={handleTaskDeleted} />
                 </TabsContent>
 
                 <TabsContent value="content" className="mt-6">
