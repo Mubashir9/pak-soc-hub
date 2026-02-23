@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus } from 'lucide-react';
+import { Plus, Check, ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +24,21 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -32,14 +47,14 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
-import type { Task } from '@/types';
+import type { Task, TeamMember } from '@/types';
 
 const formSchema = z.object({
     title: z.string().min(2, {
         message: "Task title must be at least 2 characters.",
     }),
     status: z.enum(["todo", "in_progress", "completed"]),
-    assigned_to: z.string().optional(),
+    assigned_to: z.array(z.string()).optional(),
     description: z.string().optional(),
     priority: z.enum(["low", "medium", "high"]),
     category: z.enum(["general", "content", "logistics", "food", "props", "sponsors"]),
@@ -61,13 +76,24 @@ export function CreateTaskDialog({
     onTaskUpdated
 }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+    useEffect(() => {
+        async function fetchTeam() {
+            const { data } = await supabase.from('team_members').select('*').order('name');
+            if (data) setTeamMembers(data);
+        }
+        fetchTeam();
+    }, []);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: taskToEdit?.title || "",
             status: taskToEdit?.status || "todo",
-            assigned_to: taskToEdit?.assigned_to || "",
+            assigned_to: taskToEdit?.assigned_to && taskToEdit.assigned_to !== "Unassigned"
+                ? taskToEdit.assigned_to.split(', ')
+                : [],
             description: taskToEdit?.description || "",
             priority: taskToEdit?.priority || "medium",
             category: taskToEdit?.category || "general",
@@ -80,7 +106,7 @@ export function CreateTaskDialog({
         const taskData = {
             title: values.title,
             status: values.status,
-            assigned_to: values.assigned_to || "Unassigned",
+            assigned_to: values.assigned_to && values.assigned_to.length > 0 ? values.assigned_to.join(', ') : "Unassigned",
             priority: values.priority,
             category: values.category,
             description: values.description,
@@ -155,11 +181,68 @@ export function CreateTaskDialog({
                             control={form.control}
                             name="assigned_to"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Assignee</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="John Doe" {...field} />
-                                    </FormControl>
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Assignees</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className={cn(
+                                                        "w-full justify-between h-auto min-h-[2.5rem] py-2",
+                                                        !field.value?.length && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {field.value && field.value.length > 0 ? (
+                                                            field.value.map((val) => (
+                                                                <Badge variant="secondary" key={val} className="mr-1">
+                                                                    {val}
+                                                                </Badge>
+                                                            ))
+                                                        ) : (
+                                                            "Select team members"
+                                                        )}
+                                                    </div>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[375px] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Search team members..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No members found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {teamMembers.map((member) => {
+                                                            const isSelected = field.value?.includes(member.name);
+                                                            return (
+                                                                <CommandItem
+                                                                    key={member.id}
+                                                                    value={member.name}
+                                                                    onSelect={() => {
+                                                                        const updatedValue = isSelected
+                                                                            ? (field.value || []).filter((val) => val !== member.name)
+                                                                            : [...(field.value || []), member.name];
+                                                                        field.onChange(updatedValue);
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            isSelected ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    {member.name}
+                                                                </CommandItem>
+                                                            );
+                                                        })}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                     <FormMessage />
                                 </FormItem>
                             )}

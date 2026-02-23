@@ -74,9 +74,13 @@ export function TaskCard({ task, index, onTaskUpdated, eventName }: TaskCardProp
                                         {format(new Date(task.due_date), "MMM d")}
                                     </div>
                                 )}
-                                <div className="flex items-center ml-auto">
-                                    <User className="mr-1 h-3 w-3" />
-                                    <span>Unassigned</span>
+                                <div className="flex items-center ml-auto overflow-hidden">
+                                    <User className="mr-1 h-3 w-3 shrink-0" />
+                                    <span className="truncate max-w-[120px]" title={task.assigned_to && task.assigned_to !== 'Unassigned' ? task.assigned_to : 'Unassigned'}>
+                                        {task.assigned_to && task.assigned_to !== 'Unassigned'
+                                            ? task.assigned_to
+                                            : 'Unassigned'}
+                                    </span>
                                 </div>
                             </div>
                         </CardContent>

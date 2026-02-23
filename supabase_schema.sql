@@ -1,6 +1,17 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
+-- TEAM MEMBERS TABLE
+create table if not exists team_members (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  role text not null,
+  email text not null,
+  phone text,
+  avatar text,
+  joined_at timestamp with time zone default now()
+);
+
 -- EVENTS TABLE
 create table events (
   id uuid primary key default uuid_generate_v4(),
@@ -96,6 +107,7 @@ alter table inventory enable row level security;
 alter table budget_items enable row level security;
 alter table meetings enable row level security;
 alter table content_ideas enable row level security;
+alter table team_members enable row level security;
 
 create policy "Enable all access for all users" on events for all using (true) with check (true);
 create policy "Enable all access for all users" on tasks for all using (true) with check (true);
@@ -103,3 +115,5 @@ create policy "Enable all access for all users" on inventory for all using (true
 create policy "Enable all access for all users" on budget_items for all using (true) with check (true);
 create policy "Enable all access for all users" on meetings for all using (true) with check (true);
 create policy "Enable all access for all users" on content_ideas for all using (true) with check (true);
+create policy "Enable all access for all users" on team_members for all using (true) with check (true);
+

@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { type Task, type Event, type TaskStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckSquare, ListTodo, PlayCircle, CheckCircle2 } from 'lucide-react';
+import { CheckSquare, ListTodo, PlayCircle, CheckCircle2, User } from 'lucide-react';
 
 interface DashboardTaskListProps {
     tasks: Task[];
@@ -117,11 +117,19 @@ function TaskItem({
                         </p>
                     )}
                 </div>
-                {task.due_date && (
-                    <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded uppercase ml-4">
-                        {format(new Date(task.due_date), 'MMM d')}
-                    </div>
-                )}
+                <div className="flex flex-col items-end justify-between gap-2">
+                    {task.due_date && (
+                        <div className="text-[10px] items-center font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded uppercase ml-4 self-end">
+                            {format(new Date(task.due_date), 'MMM d')}
+                        </div>
+                    )}
+                    {task.assigned_to && task.assigned_to !== 'Unassigned' && (
+                        <div className="flex items-center text-[10px] text-muted-foreground ml-4 max-w-[80px]">
+                            <User className="mr-1 h-2.5 w-2.5 shrink-0" />
+                            <span className="truncate" title={task.assigned_to}>{task.assigned_to}</span>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

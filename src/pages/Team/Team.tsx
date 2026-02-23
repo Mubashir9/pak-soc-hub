@@ -4,8 +4,7 @@ import type { TeamMember } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { Mail, Phone, Award } from 'lucide-react';
 
 export default function Team() {
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -70,9 +69,9 @@ export default function Team() {
                                         <span>{member.phone}</span>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-3 text-muted-foreground p-2 hover:bg-slate-50 rounded-md transition-colors">
-                                    <Calendar className="h-4 w-4 text-primary" />
-                                    <span>Joined {format(new Date(member.joined_at), 'MMMM yyyy')}</span>
+                                <div className="flex items-center gap-3 text-muted-foreground p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors">
+                                    <Award className="h-4 w-4 text-primary" />
+                                    <span>{member.role}</span>
                                 </div>
                             </div>
                         </CardContent>
