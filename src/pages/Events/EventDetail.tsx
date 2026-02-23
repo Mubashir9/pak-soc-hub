@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { mockApi, type Event, type Task, type InventoryItem, type BudgetItem } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
+import type { Event, Task, InventoryItem, BudgetItem, TeamMember } from '@/types';
 import { KanbanBoard } from '@/features/tasks/KanbanBoard';
 import { InventoryList } from '@/features/inventory/InventoryList';
 import { BudgetTracker } from '@/features/budget/BudgetTracker';
@@ -16,7 +17,6 @@ import { format } from 'date-fns';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Separator } from '@/components/ui/separator';
 import { TaskFilters, type TaskFiltersState } from '@/features/tasks/TaskFilters';
-import { MOCK_TEAM } from '@/lib/mockData';
 
 export default function EventDetail() {
     const { id } = useParams();
@@ -24,9 +24,9 @@ export default function EventDetail() {
     const [loading, setLoading] = useState(true);
 
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [budget, setBudget] = useState<BudgetItem[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
     const [filters, setFilters] = useState<TaskFiltersState>({
         assignee: "all",
@@ -36,22 +36,28 @@ export default function EventDetail() {
 
     useEffect(() => {
         if (id) {
-            Promise.all([
-                mockApi.getEventById(id),
-                mockApi.getTasksByEvent(id),
-                mockApi.getInventoryByEvent(id),
-                mockApi.getBudgetByEvent(id)
-            ]).then(([eventData, tasksData, inventoryData, budgetData]) => {
-                setEvent(eventData);
-                setTasks(tasksData);
-                setInventory(inventoryData);
-                setBudget(budgetData);
+            const fetchEventDetails = async () => {
+                const [eventRes, tasksRes, inventoryRes, budgetRes, teamRes] = await Promise.all([
+                    supabase.from('events').select('*').eq('id', id).single(),
+                    supabase.from('tasks').select('*').eq('event_id', id),
+                    supabase.from('inventory').select('*').eq('event_id', id),
+                    supabase.from('budget_items').select('*').eq('event_id', id),
+                    supabase.from('team_members').select('*')
+                ]);
+
+                if (eventRes.data) setEvent(eventRes.data);
+                if (tasksRes.data) setTasks(tasksRes.data);
+                if (inventoryRes.data) setInventory(inventoryRes.data);
+                if (budgetRes.data) setBudget(budgetRes.data);
+                if (teamRes.data) setTeamMembers(teamRes.data);
+
                 setLoading(false);
-            });
+            };
+            fetchEventDetails();
         }
     }, [id]);
 
-    useEffect(() => {
+    const filteredTasks = useMemo(() => {
         let result = tasks;
 
         if (filters.assignee !== "all") {
@@ -62,15 +68,24 @@ export default function EventDetail() {
             result = result.filter(t => t.priority === filters.priority);
         }
 
-        setFilteredTasks(result);
+        return result;
     }, [tasks, filters]);
 
     const handleTaskCreated = (newTask: Task) => {
         setTasks((prev) => [...prev, newTask]);
     };
 
-    const handleTaskUpdated = (updatedTask: Task) => {
+    const handleTaskUpdated = async (updatedTask: Task) => {
         setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+
+        const { error } = await supabase
+            .from('tasks')
+            .update({ status: updatedTask.status })
+            .eq('id', updatedTask.id);
+
+        if (error) {
+            console.error("Error updating task status:", error);
+        }
     };
 
     const handleEventUpdated = (updatedEvent: Event) => {
@@ -181,7 +196,7 @@ export default function EventDetail() {
                         <TaskFilters
                             filters={filters}
                             setFilters={setFilters}
-                            teamMembers={MOCK_TEAM}
+                            teamMembers={teamMembers}
                             showEventFilter={false}
                         />
                     </div>

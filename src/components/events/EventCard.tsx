@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin, ArrowRight, DollarSign } from "lucide-react";
-import type { Event } from "@/lib/mockData";
+import type { Event } from "@/types";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";

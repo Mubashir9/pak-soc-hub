@@ -2,7 +2,7 @@
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Task } from '@/lib/mockData';
+import type { Task } from '@/types';
 
 import { Calendar, User, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, type DropResult } from '@hello-pangea/dnd';
-import type { Task, TaskStatus } from '@/lib/mockData';
+import type { Task, TaskStatus } from '@/types';
 import { TaskCard } from './TaskCard';
 import { cn } from '@/lib/utils';
 

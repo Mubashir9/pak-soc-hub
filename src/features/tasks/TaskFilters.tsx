@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import type { TeamMember, Event } from "@/lib/mockData";
+import type { Event, TeamMember, TaskPriority } from '@/types';
 
 export interface TaskFiltersState {
     assignee: string | "all";

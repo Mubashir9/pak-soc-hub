@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { mockApi, type Event, type BudgetItem } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
+import type { BudgetItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
@@ -24,44 +25,46 @@ import {
 } from 'recharts';
 
 export default function Budget() {
-    const [events, setEvents] = useState<Event[]>([]);
-    const [budgetItems, setBudgetItems] = useState<{ eventName: string, item: BudgetItem }[]>([]);
+    const [summary, setSummary] = useState<any[]>([]);
+    const [budgetItems, setBudgetItems] = useState<(BudgetItem & { event_name?: string })[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
-            const eventsData = await mockApi.getEvents();
-            setEvents(eventsData);
+            const [summaryRes, itemsRes] = await Promise.all([
+                supabase.from('event_budget_summary').select('*'),
+                supabase.from('budget_items').select('*, events(name)')
+            ]);
 
-            // Fetch budget items for all events
-            const allItems: { eventName: string, item: BudgetItem }[] = [];
-            for (const event of eventsData) {
-                const items = await mockApi.getBudgetByEvent(event.id);
-                items.forEach(item => {
-                    allItems.push({ eventName: event.name, item });
-                });
+            if (summaryRes.data) setSummary(summaryRes.data);
+            if (itemsRes.data) {
+                // Flatten the event name from the joined query
+                const flattenedItems = itemsRes.data.map((item: any) => ({
+                    ...item,
+                    event_name: item.events?.name
+                }));
+                setBudgetItems(flattenedItems);
             }
-            setBudgetItems(allItems);
             setLoading(false);
         };
 
         fetchData();
     }, []);
 
-    // Aggregates
-    const totalAllocated = events.reduce((sum, e) => sum + e.budget_total, 0);
-    const totalSpent = events.reduce((sum, e) => sum + e.budget_spent, 0);
+    // Aggregates from summary view
+    const totalAllocated = summary.reduce((sum, e) => sum + (e.allocated || 0), 0);
+    const totalSpent = summary.reduce((sum, e) => sum + (e.spent || 0), 0);
     const remaining = totalAllocated - totalSpent;
 
     // Charts Data
-    const eventSpendingData = events.map(e => ({
-        name: e.name,
-        Allocated: e.budget_total,
-        Spent: e.budget_spent
+    const eventSpendingData = summary.map(e => ({
+        name: e.event_name,
+        Allocated: e.allocated,
+        Spent: e.spent
     }));
 
     const categorySpending: Record<string, number> = {};
-    budgetItems.forEach(({ item }) => {
+    budgetItems.forEach((item) => {
         const cat = item.category || 'Uncategorized';
         categorySpending[cat] = (categorySpending[cat] || 0) + item.actual_cost;
     });
@@ -86,7 +89,7 @@ export default function Budget() {
                         <span className="text-2xl font-bold">${totalAllocated.toLocaleString()}</span>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xs text-muted-foreground">Across {events.length} events</div>
+                        <div className="text-xs text-muted-foreground">Across {summary.length} events</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -96,7 +99,7 @@ export default function Budget() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-xs text-muted-foreground">
-                            {((totalSpent / totalAllocated) * 100).toFixed(1)}% of budget used
+                            {totalAllocated > 0 ? `${((totalSpent / totalAllocated) * 100).toFixed(1)}% of budget used` : 'N/A'}
                         </div>
                     </CardContent>
                 </Card>
@@ -178,10 +181,10 @@ export default function Budget() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {budgetItems.slice(0, 10).map(({ item, eventName }, i) => (
+                            {budgetItems.slice(0, 10).map((item, i) => (
                                 <TableRow key={i}>
                                     <TableCell className="font-medium">{item.description}</TableCell>
-                                    <TableCell>{eventName}</TableCell>
+                                    <TableCell>{item.event_name}</TableCell>
                                     <TableCell>{item.category}</TableCell>
                                     <TableCell className="text-right">${item.actual_cost.toLocaleString()}</TableCell>
                                 </TableRow>

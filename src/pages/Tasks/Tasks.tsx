@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { mockApi, type Task, type Event, MOCK_TEAM } from '@/lib/mockData';
+import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { Task, Event, TeamMember } from '@/types';
 import { KanbanBoard } from '@/features/tasks/KanbanBoard';
 import { TaskFilters, type TaskFiltersState } from '@/features/tasks/TaskFilters';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
@@ -7,7 +8,7 @@ import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 export default function Tasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
-    const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState<TaskFiltersState>({
@@ -17,26 +18,22 @@ export default function Tasks() {
     });
 
     useEffect(() => {
-        Promise.all([
-            // In a real app, we'd have an API to get all tasks
-            // For mock, we'll fetch tasks for each event or just assume we have a global getter
-            // Let's iterate all events to get all tasks for now, or just use MOCK_TASKS directly if exported
-            // Since mockApi.getTasksByEvent is all we have, let's fetch events first then tasks
-            mockApi.getEvents()
-        ]).then(async ([eventsData]) => {
-            setEvents(eventsData);
+        const loadPageData = async () => {
+            const [eventsRes, tasksRes, teamRes] = await Promise.all([
+                supabase.from('events').select('*'),
+                supabase.from('tasks').select('*'),
+                supabase.from('team_members').select('*')
+            ]);
 
-            // Fetch all tasks for all events
-            const allTasksPromises = eventsData.map(e => mockApi.getTasksByEvent(e.id));
-            const tasksArrays = await Promise.all(allTasksPromises);
-            const allTasks = tasksArrays.flat();
-
-            setTasks(allTasks);
+            if (eventsRes.data) setEvents(eventsRes.data);
+            if (tasksRes.data) setTasks(tasksRes.data);
+            if (teamRes.data) setTeamMembers(teamRes.data);
             setLoading(false);
-        });
+        };
+        loadPageData();
     }, []);
 
-    useEffect(() => {
+    const filteredTasks = useMemo(() => {
         let result = tasks;
 
         if (filters.assignee !== "all") {
@@ -51,15 +48,25 @@ export default function Tasks() {
             result = result.filter(t => t.event_id === filters.eventId);
         }
 
-        setFilteredTasks(result);
+        return result;
     }, [tasks, filters]);
 
     const handleTaskCreated = (newTask: Task) => {
         setTasks(prev => [...prev, newTask]);
     };
 
-    const handleTaskUpdated = (updatedTask: Task) => {
+    const handleTaskUpdated = async (updatedTask: Task) => {
         setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+
+        const { error } = await supabase
+            .from('tasks')
+            .update({ status: updatedTask.status })
+            .eq('id', updatedTask.id);
+
+        if (error) {
+            console.error("Error updating task status:", error);
+            // Revert or show error
+        }
     };
 
     // Create a map of eventId -> eventName for the board
@@ -87,7 +94,7 @@ export default function Tasks() {
                 <TaskFilters
                     filters={filters}
                     setFilters={setFilters}
-                    teamMembers={MOCK_TEAM}
+                    teamMembers={teamMembers}
                     events={events}
                     showEventFilter={true}
                 />

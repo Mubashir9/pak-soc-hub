@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
-import type { InventoryItem } from "@/lib/mockData";
+import { Edit2, Trash2, Plus } from "lucide-react";
+import type { InventoryItem, InventoryStatus } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 import { CreateInventoryItemDialog } from "@/components/inventory/CreateInventoryItemDialog";
 
@@ -21,11 +22,25 @@ interface InventoryListProps {
 }
 
 export function InventoryList({ items, eventId, onItemCreated, onItemUpdated }: InventoryListProps) {
+    const handleDelete = async (item: InventoryItem) => {
+        const { error } = await supabase
+            .from('inventory')
+            .delete()
+            .eq('id', item.id);
+
+        if (error) {
+            console.error("Error deleting inventory item:", error);
+        } else {
+            // Ideally trigger a refresh or call a prop
+            window.location.reload(); // Simple refresh for now to sync with Supabase
+        }
+    };
+
     const getStatusColor = (status: InventoryItem['status']) => {
         switch (status) {
-            case 'needed': return 'destructive'; // Red-ish
-            case 'acquired': return 'default'; // Black/Primary
-            case 'available': return 'secondary'; // Grey
+            case 'needed': return 'destructive';
+            case 'acquired': return 'default';
+            case 'available': return 'secondary';
             default: return 'outline';
         }
     };
@@ -37,6 +52,11 @@ export function InventoryList({ items, eventId, onItemCreated, onItemUpdated }: 
                 <CreateInventoryItemDialog
                     eventId={eventId}
                     onItemCreated={onItemCreated}
+                    trigger={
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" /> Add Item
+                        </Button>
+                    }
                 />
             </div>
 
@@ -80,7 +100,12 @@ export function InventoryList({ items, eventId, onItemCreated, onItemUpdated }: 
                                                     </Button>
                                                 }
                                             />
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                onClick={() => handleDelete(item)}
+                                            >
                                                 <Trash2 className="h-4 w-4" />
                                                 <span className="sr-only">Delete {item.name}</span>
                                             </Button>

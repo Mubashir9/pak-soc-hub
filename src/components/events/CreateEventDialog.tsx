@@ -39,7 +39,8 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import type { Event } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
+import type { Event } from '@/types';
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -98,41 +99,57 @@ export function CreateEventDialog({
         return "completed";
     };
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
         if (eventToEdit) {
-            const updatedEvent: Event = {
-                ...eventToEdit,
+            const updatedEventData = {
                 name: values.name,
-                event_type: values.event_type as Event['event_type'],
+                event_type: values.event_type,
                 date_start: values.date_start.toISOString(),
                 date_end: values.date_start.toISOString(),
                 location: values.location,
                 description: values.description || "",
                 budget_total: values.budget_total,
-                status: values.status as Event['status'], // Manual override
+                status: values.status,
             };
-            if (onEventUpdated) {
-                onEventUpdated(updatedEvent);
+
+            const { data, error } = await supabase
+                .from('events')
+                .update(updatedEventData)
+                .eq('id', eventToEdit.id)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error updating event:", error);
+            } else if (onEventUpdated && data) {
+                onEventUpdated(data as Event);
             }
         } else {
             // Auto-calculate status for new events
             const autoStatus = calculateStatus(values.date_start);
 
-            const newEvent: Event = {
-                id: Math.random().toString(36).substr(2, 9),
+            const newEventData = {
                 name: values.name,
-                event_type: values.event_type as Event['event_type'],
+                event_type: values.event_type,
                 status: autoStatus,
                 date_start: values.date_start.toISOString(),
                 date_end: values.date_start.toISOString(),
                 location: values.location,
                 budget_total: values.budget_total,
                 budget_spent: 0,
-                created_at: new Date().toISOString(),
                 description: values.description || "",
             };
-            if (onEventCreated) {
-                onEventCreated(newEvent);
+
+            const { data, error } = await supabase
+                .from('events')
+                .insert(newEventData)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error creating event:", error);
+            } else if (onEventCreated && data) {
+                onEventCreated(data as Event);
             }
         }
 

@@ -31,7 +31,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { Task } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
+import type { Task } from '@/types';
 
 const formSchema = z.object({
     title: z.string().min(2, {
@@ -73,39 +74,48 @@ export function CreateTaskDialog({
         },
     });
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        if (taskToEdit) {
-            const updatedTask: Task = {
-                ...taskToEdit,
-                title: values.title,
-                status: values.status as Task['status'],
-                assigned_to: values.assigned_to || "Unassigned",
-                priority: values.priority as Task['priority'],
-                category: values.category as Task['category'],
-                description: values.description,
-            };
-            if (onTaskUpdated) {
-                onTaskUpdated(updatedTask);
-            }
-        } else if (eventId) {
-            const newTask: Task = {
-                id: Math.random().toString(36).substr(2, 9),
-                event_id: eventId,
-                title: values.title,
-                status: values.status as Task['status'],
-                assigned_to: values.assigned_to || "Unassigned",
-                priority: values.priority as Task['priority'],
-                category: values.category as Task['category'],
-                created_at: new Date().toISOString(),
-                description: values.description,
-            };
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        setOpen(false); // Close early for better UX, or keep open if we want to handle errors better
 
-            if (onTaskCreated) {
-                onTaskCreated(newTask);
+        const taskData = {
+            title: values.title,
+            status: values.status,
+            assigned_to: values.assigned_to || "Unassigned",
+            priority: values.priority,
+            category: values.category,
+            description: values.description,
+        };
+
+        if (taskToEdit) {
+            const { data, error } = await supabase
+                .from('tasks')
+                .update(taskData)
+                .eq('id', taskToEdit.id)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error updating task:", error);
+                return;
             }
+            if (onTaskUpdated) onTaskUpdated(data as Task);
+        } else if (eventId) {
+            const { data, error } = await supabase
+                .from('tasks')
+                .insert({
+                    ...taskData,
+                    event_id: eventId,
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error creating task:", error);
+                return;
+            }
+            if (onTaskCreated) onTaskCreated(data as Task);
         }
 
-        setOpen(false);
         form.reset();
     }
 

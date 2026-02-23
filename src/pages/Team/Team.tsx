@@ -1,4 +1,6 @@
-import { MOCK_TEAM } from '@/lib/mockData';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { TeamMember } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +8,24 @@ import { Mail, Phone, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Team() {
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTeam = async () => {
+            const { data, error } = await supabase.from('team_members').select('*');
+            if (error) {
+                console.error("Error fetching team members:", error);
+            } else {
+                setTeamMembers(data || []);
+            }
+            setLoading(false);
+        };
+        fetchTeam();
+    }, []);
+
+    if (loading) return <div className="p-8">Loading team...</div>;
+
     return (
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-slate-900/50 p-6">
             <div className="flex justify-between items-center mb-6">
@@ -16,7 +36,7 @@ export default function Team() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {MOCK_TEAM.map((member) => (
+                {teamMembers.map((member) => (
                     <Card key={member.id} className="overflow-hidden">
                         <CardHeader className="bg-slate-100/50 dark:bg-slate-800/50 pb-8 relative">
                             <div className="absolute top-4 right-4">

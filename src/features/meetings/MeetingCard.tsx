@@ -3,7 +3,7 @@ import { Calendar, MapPin, ExternalLink, Users, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { Meeting } from '@/lib/mockData';
+import type { Meeting } from '@/types';
 import { Link } from 'react-router-dom';
 
 interface MeetingCardProps {

@@ -28,7 +28,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useState, useEffect } from "react";
-import type { InventoryItem, InventoryStatus } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
+import type { InventoryItem, InventoryStatus } from "@/types";
 import { Plus } from "lucide-react";
 
 const formSchema = z.object({
@@ -79,9 +80,8 @@ export function CreateInventoryItemDialog({
         }
     }, [itemToEdit, form, open]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        const newItem: InventoryItem = {
-            id: itemToEdit ? itemToEdit.id : Math.random().toString(36).substr(2, 9),
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        const itemData = {
             event_id: eventId,
             name: values.name,
             quantity: values.quantity,
@@ -89,9 +89,30 @@ export function CreateInventoryItemDialog({
         };
 
         if (itemToEdit) {
-            onItemUpdated?.(newItem);
+            const { data, error } = await supabase
+                .from('inventory')
+                .update(itemData)
+                .eq('id', itemToEdit.id)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error updating inventory item:", error);
+                return;
+            }
+            if (onItemUpdated) onItemUpdated(data as InventoryItem);
         } else {
-            onItemCreated?.(newItem);
+            const { data, error } = await supabase
+                .from('inventory')
+                .insert(itemData)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error creating inventory item:", error);
+                return;
+            }
+            if (onItemCreated) onItemCreated(data as InventoryItem);
         }
 
         setOpen(false);

@@ -40,7 +40,8 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { type ContentIdea, mockApi } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
+import type { ContentIdea } from "@/types";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -111,29 +112,36 @@ export function ContentForm({
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
+            const contentData = {
+                event_id: eventId,
+                title: values.title,
+                description: values.description,
+                platform: values.platform,
+                status: values.status,
+                scheduled_date: values.scheduled_date?.toISOString(),
+            };
+
             if (contentToEdit) {
-                const updatedContent: ContentIdea = {
-                    ...contentToEdit,
-                    title: values.title,
-                    description: values.description,
-                    platform: values.platform,
-                    status: values.status,
-                    scheduled_date: values.scheduled_date?.toISOString(),
-                };
-                await mockApi.updateContent(updatedContent);
+                const { data, error } = await supabase
+                    .from('content_ideas')
+                    .update(contentData)
+                    .eq('id', contentToEdit.id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
                 toast.success("Content updated successfully");
-                if (onContentUpdated) onContentUpdated(updatedContent);
+                if (onContentUpdated) onContentUpdated(data as ContentIdea);
             } else {
-                const newContent = await mockApi.createContent({
-                    event_id: eventId,
-                    title: values.title,
-                    description: values.description,
-                    platform: values.platform,
-                    status: values.status,
-                    scheduled_date: values.scheduled_date?.toISOString(),
-                });
+                const { data, error } = await supabase
+                    .from('content_ideas')
+                    .insert(contentData)
+                    .select()
+                    .single();
+
+                if (error) throw error;
                 toast.success("Content created successfully");
-                if (onContentCreated) onContentCreated(newContent);
+                if (onContentCreated) onContentCreated(data as ContentIdea);
             }
             setOpen(false);
             form.reset();

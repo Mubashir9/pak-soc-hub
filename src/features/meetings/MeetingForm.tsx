@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { mockApi, MOCK_TEAM, MOCK_EVENTS, type Meeting } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
+import type { Meeting, TeamMember, Event } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +33,20 @@ interface MeetingFormProps {
 export function MeetingForm({ onMeetingCreated, onMeetingUpdated, trigger, initialData }: MeetingFormProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            const [teamRes, eventsRes] = await Promise.all([
+                supabase.from('team_members').select('*'),
+                supabase.from('events').select('*')
+            ]);
+            if (teamRes.data) setTeamMembers(teamRes.data);
+            if (eventsRes.data) setEvents(eventsRes.data);
+        };
+        loadInitialData();
+    }, []);
 
     const [formData, setFormData] = useState({
         title: initialData?.title || '',
@@ -67,31 +82,37 @@ export function MeetingForm({ onMeetingCreated, onMeetingUpdated, trigger, initi
 
         setLoading(true);
         try {
+            const meetingData = {
+                title: formData.title,
+                date: new Date(formData.date).toISOString(),
+                location: formData.location,
+                meeting_link: formData.meeting_link,
+                agenda: formData.agenda,
+                attendees: formData.attendees,
+                event_id: formData.event_id === 'none' ? null : formData.event_id,
+            };
+
             if (initialData) {
-                const updatedMeeting = await mockApi.updateMeeting({
-                    ...initialData,
-                    title: formData.title,
-                    date: new Date(formData.date).toISOString(),
-                    location: formData.location,
-                    meeting_link: formData.meeting_link,
-                    agenda: formData.agenda,
-                    attendees: formData.attendees,
-                    event_id: formData.event_id === 'none' ? undefined : formData.event_id,
-                });
+                const { data, error } = await supabase
+                    .from('meetings')
+                    .update(meetingData)
+                    .eq('id', initialData.id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
                 toast.success("Meeting updated successfully");
-                onMeetingUpdated?.(updatedMeeting);
+                onMeetingUpdated?.(data as Meeting);
             } else {
-                const newMeeting = await mockApi.createMeeting({
-                    title: formData.title,
-                    date: new Date(formData.date).toISOString(),
-                    location: formData.location,
-                    meeting_link: formData.meeting_link,
-                    agenda: formData.agenda,
-                    attendees: formData.attendees,
-                    event_id: formData.event_id === 'none' ? undefined : formData.event_id,
-                });
+                const { data, error } = await supabase
+                    .from('meetings')
+                    .insert(meetingData)
+                    .select()
+                    .single();
+
+                if (error) throw error;
                 toast.success("Meeting scheduled successfully");
-                onMeetingCreated?.(newMeeting);
+                onMeetingCreated?.(data as Meeting);
             }
             setOpen(false);
             if (!initialData) {
@@ -105,8 +126,9 @@ export function MeetingForm({ onMeetingCreated, onMeetingUpdated, trigger, initi
                     attendees: [],
                 });
             }
-        } catch (error) {
-            toast.error("Failed to schedule meeting");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to save meeting");
         } finally {
             setLoading(false);
         }
@@ -180,7 +202,7 @@ export function MeetingForm({ onMeetingCreated, onMeetingUpdated, trigger, initi
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="none">None</SelectItem>
-                                    {MOCK_EVENTS.map(event => (
+                                    {events.map(event => (
                                         <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
                                     ))}
                                 </SelectContent>
@@ -189,7 +211,7 @@ export function MeetingForm({ onMeetingCreated, onMeetingUpdated, trigger, initi
                         <div className="grid gap-2">
                             <Label>Attendees</Label>
                             <div className="flex flex-wrap gap-2 p-2 border rounded-md max-h-32 overflow-y-auto">
-                                {MOCK_TEAM.map(member => (
+                                {teamMembers.map(member => (
                                     <label key={member.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-secondary p-1 rounded transition-colors">
                                         <input
                                             type="checkbox"

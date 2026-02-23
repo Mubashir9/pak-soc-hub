@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { mockApi, type Event } from "@/lib/mockData";
+import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Event } from "@/types";
 import { EventCard } from "@/components/events/EventCard";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
@@ -14,20 +15,28 @@ import {
 
 export default function Events() {
     const [events, setEvents] = useState<Event[]>([]);
-    const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        mockApi.getEvents().then((data) => {
-            setEvents(data);
-            setFilteredEvents(data);
+        const fetchEvents = async () => {
+            const { data, error } = await supabase
+                .from('events')
+                .select('*')
+                .order('date_start', { ascending: true });
+
+            if (error) {
+                console.error("Error fetching events:", error);
+            } else {
+                setEvents(data || []);
+            }
             setLoading(false);
-        });
+        };
+        fetchEvents();
     }, []);
 
-    useEffect(() => {
+    const filteredEvents = useMemo(() => {
         let result = events;
 
         if (searchQuery) {
@@ -41,7 +50,7 @@ export default function Events() {
             result = result.filter((event) => event.status === statusFilter);
         }
 
-        setFilteredEvents(result);
+        return result;
     }, [searchQuery, statusFilter, events]);
 
     const addNewEvent = (newEvent: Event) => {

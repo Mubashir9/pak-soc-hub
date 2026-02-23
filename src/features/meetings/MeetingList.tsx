@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { mockApi, type Meeting } from '@/lib/mockData';
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { Meeting } from '@/types';
 import { MeetingCard } from './MeetingCard';
 import { MeetingForm } from './MeetingForm';
 import { Input } from '@/components/ui/input';
@@ -18,23 +19,32 @@ interface MeetingListProps {
 
 export function MeetingList({ eventId }: MeetingListProps) {
     const [meetings, setMeetings] = useState<Meeting[]>([]);
-    const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all");
 
     useEffect(() => {
-        const fetchMeetings = eventId
-            ? mockApi.getMeetingsByEvent(eventId)
-            : mockApi.getMeetings();
+        const fetchMeetings = async () => {
+            let query = supabase.from('meetings').select('*');
 
-        fetchMeetings.then(data => {
-            setMeetings(data);
+            if (eventId) {
+                query = query.eq('event_id', eventId);
+            }
+
+            const { data, error } = await query.order('date', { ascending: false });
+
+            if (error) {
+                console.error("Error fetching meetings:", error);
+            } else {
+                setMeetings(data || []);
+            }
             setLoading(false);
-        });
+        };
+
+        fetchMeetings();
     }, [eventId]);
 
-    useEffect(() => {
+    const filteredMeetings = useMemo(() => {
         let result = [...meetings];
 
         if (search) {
@@ -53,7 +63,7 @@ export function MeetingList({ eventId }: MeetingListProps) {
         // Sort by date (descending for past, ascending for upcoming)
         result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        setFilteredMeetings(result);
+        return result;
     }, [meetings, search, filter]);
 
     if (loading) {

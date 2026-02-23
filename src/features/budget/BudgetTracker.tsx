@@ -8,8 +8,9 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
-import type { BudgetItem } from "@/lib/mockData";
+import { Edit2, Trash2, Plus } from "lucide-react";
+import type { BudgetItem } from "@/types";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 import { CreateBudgetItemDialog } from "@/components/budget/CreateBudgetItemDialog";
@@ -20,9 +21,25 @@ interface BudgetTrackerProps {
     eventId: string;
     onItemCreated?: (item: BudgetItem) => void;
     onItemUpdated?: (item: BudgetItem) => void;
+    onItemDeleted?: (itemId: string) => void;
 }
 
-export function BudgetTracker({ items, totalBudget, eventId, onItemCreated, onItemUpdated }: BudgetTrackerProps) {
+export function BudgetTracker({ items, totalBudget, eventId, onItemCreated, onItemUpdated, onItemDeleted }: BudgetTrackerProps) {
+    const handleDelete = async (item: BudgetItem) => {
+        const { error } = await supabase
+            .from('budget_items')
+            .delete()
+            .eq('id', item.id);
+
+        if (error) {
+            console.error("Error deleting budget item:", error);
+        } else {
+            if (onItemDeleted) {
+                onItemDeleted(item.id);
+            }
+        }
+    };
+
     const totalEstimated = items.reduce((sum, item) => sum + item.estimated_cost, 0);
     const totalActual = items.reduce((sum, item) => sum + item.actual_cost, 0);
     const remainingBudget = totalBudget - totalActual;
@@ -52,6 +69,11 @@ export function BudgetTracker({ items, totalBudget, eventId, onItemCreated, onIt
                     <CreateBudgetItemDialog
                         eventId={eventId}
                         onItemCreated={onItemCreated}
+                        trigger={
+                            <Button size="sm">
+                                <Plus className="mr-2 h-4 w-4" /> Add Expense
+                            </Button>
+                        }
                     />
                 </div>
 
@@ -95,7 +117,12 @@ export function BudgetTracker({ items, totalBudget, eventId, onItemCreated, onIt
                                                         </Button>
                                                     }
                                                 />
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => handleDelete(item)}
+                                                >
                                                     <Trash2 className="h-4 w-4" />
                                                     <span className="sr-only">Delete {item.description}</span>
                                                 </Button>

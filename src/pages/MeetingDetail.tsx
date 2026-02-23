@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { mockApi, MOCK_TEAM, type Meeting } from '@/lib/mockData';
+import { supabase } from '@/lib/supabase';
+import type { Meeting, TeamMember } from '@/types';
 import { Button } from '@/components/ui/button';
 import { MeetingForm } from '@/features/meetings/MeetingForm';
 import { Badge } from '@/components/ui/badge';
@@ -40,27 +41,43 @@ export default function MeetingDetail() {
     const [loading, setLoading] = useState(true);
     const [minutes, setMinutes] = useState("");
     const [attendees, setAttendees] = useState<string[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
     useEffect(() => {
         if (id) {
-            mockApi.getMeetingById(id).then(data => {
-                setMeeting(data);
-                if (data) {
-                    setMinutes(data.minutes || "");
-                    setAttendees(data.attendees || []);
+            const fetchMeetingDetails = async () => {
+                const [meetingRes, teamRes] = await Promise.all([
+                    supabase.from('meetings').select('*').eq('id', id).single(),
+                    supabase.from('team_members').select('*')
+                ]);
+
+                if (meetingRes.data) {
+                    setMeeting(meetingRes.data);
+                    setMinutes(meetingRes.data.minutes || "");
+                    setAttendees(meetingRes.data.attendees || []);
+                }
+                if (teamRes.data) {
+                    setTeamMembers(teamRes.data);
                 }
                 setLoading(false);
-            });
+            };
+            fetchMeetingDetails();
         }
     }, [id]);
 
     const handleSaveMinutes = async () => {
         if (!meeting) return;
         try {
-            await mockApi.updateMeeting({ ...meeting, minutes });
+            const { error } = await supabase
+                .from('meetings')
+                .update({ minutes })
+                .eq('id', meeting.id);
+
+            if (error) throw error;
             toast.success("Minutes saved successfully");
             setMeeting({ ...meeting, minutes });
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             toast.error("Failed to save minutes");
         }
     };
@@ -75,10 +92,16 @@ export default function MeetingDetail() {
         setAttendees(newAttendees); // Optimistic update
 
         try {
-            await mockApi.updateMeeting({ ...meeting, attendees: newAttendees });
+            const { error } = await supabase
+                .from('meetings')
+                .update({ attendees: newAttendees })
+                .eq('id', meeting.id);
+
+            if (error) throw error;
             toast.info("Attendance updated");
             setMeeting({ ...meeting, attendees: newAttendees });
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             setAttendees(attendees); // Revert on error
             toast.error("Failed to update attendance");
         }
@@ -87,10 +110,16 @@ export default function MeetingDetail() {
     const handleDelete = async () => {
         if (!meeting) return;
         try {
-            await mockApi.deleteMeeting(meeting.id);
+            const { error } = await supabase
+                .from('meetings')
+                .delete()
+                .eq('id', meeting.id);
+
+            if (error) throw error;
             toast.success("Meeting deleted successfully");
             navigate('/meetings');
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             toast.error("Failed to delete meeting");
         }
     };
@@ -223,11 +252,11 @@ export default function MeetingDetail() {
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold">Attendance Tracking</h2>
                         <div className="text-sm text-muted-foreground">
-                            {attendees.length} / {MOCK_TEAM.length} Present
+                            {attendees.length} / {teamMembers.length} Present
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {MOCK_TEAM.map(member => (
+                        {teamMembers.map(member => (
                             <div
                                 key={member.id}
                                 className={`flex justify-between items-center p-4 border rounded-lg transition-colors cursor-pointer ${attendees.includes(member.id) ? 'bg-primary/5 border-primary/50' : 'hover:bg-accent'

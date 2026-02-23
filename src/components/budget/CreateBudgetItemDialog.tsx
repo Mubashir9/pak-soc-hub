@@ -28,7 +28,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useState, useEffect } from "react";
-import type { BudgetItem } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
+import type { BudgetItem } from "@/types";
 import { Plus } from "lucide-react";
 
 const formSchema = z.object({
@@ -83,9 +84,8 @@ export function CreateBudgetItemDialog({
         }
     }, [itemToEdit, form, open]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        const newItem: BudgetItem = {
-            id: itemToEdit ? itemToEdit.id : Math.random().toString(36).substr(2, 9),
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        const itemData = {
             event_id: eventId,
             description: values.description,
             category: values.category,
@@ -94,9 +94,30 @@ export function CreateBudgetItemDialog({
         };
 
         if (itemToEdit) {
-            onItemUpdated?.(newItem);
+            const { data, error } = await supabase
+                .from('budget_items')
+                .update(itemData)
+                .eq('id', itemToEdit.id)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error updating budget item:", error);
+                return;
+            }
+            if (onItemUpdated) onItemUpdated(data as BudgetItem);
         } else {
-            onItemCreated?.(newItem);
+            const { data, error } = await supabase
+                .from('budget_items')
+                .insert(itemData)
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Error creating budget item:", error);
+                return;
+            }
+            if (onItemCreated) onItemCreated(data as BudgetItem);
         }
 
         setOpen(false);

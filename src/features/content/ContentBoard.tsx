@@ -4,7 +4,8 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-p
 import { Plus, GripVertical, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 
-import { type ContentIdea, mockApi } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
+import type { ContentIdea } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,8 +34,13 @@ export function ContentBoard({ eventId }: ContentBoardProps) {
     const loadContent = async () => {
         setLoading(true);
         try {
-            const data = await mockApi.getContentByEvent(eventId);
-            setContent(data);
+            const { data, error } = await supabase
+                .from('content_ideas')
+                .select('*')
+                .eq('event_id', eventId);
+
+            if (error) throw error;
+            setContent(data || []);
         } catch (error) {
             console.error("Failed to load content", error);
             toast.error("Failed to load content");
@@ -72,13 +78,18 @@ export function ContentBoard({ eventId }: ContentBoardProps) {
             setContent(content.map(c => c.id === draggableId ? updatedItem : c));
 
             try {
-                await mockApi.updateContent(updatedItem);
+                const { error } = await supabase
+                    .from('content_ideas')
+                    .update({ status: newStatus })
+                    .eq('id', draggableId);
+
+                if (error) throw error;
                 toast.success(`Moved to ${COLUMNS.find(c => c.id === newStatus)?.title}`);
             } catch (error) {
                 console.error("Failed to update status", error);
                 toast.error("Failed to update status");
                 // Revert
-                setContent(content);
+                loadContent();
             }
         }
     };
