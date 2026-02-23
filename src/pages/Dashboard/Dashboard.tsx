@@ -103,16 +103,16 @@ export default function Dashboard() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {/* Recent Events / Activity */}
-                <Card className="col-span-4">
-                    <CardHeader className="flex flex-row items-center justify-between">
+                <Card className="col-span-4 flex flex-col h-[450px]">
+                    <CardHeader className="flex flex-row items-center justify-between shrink-0">
                         <CardTitle>Upcoming Events</CardTitle>
                         <div className="text-sm text-muted-foreground">
                             Budget: ${totalSpent.toLocaleString()} / ${totalBudget.toLocaleString()} ({budgetPercentage}%)
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-6">
                         <div className="space-y-4">
-                            {events.slice(0, 3).map(event => (
+                            {events.map(event => (
                                 <div
                                     key={event.id}
                                     className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0 hover:bg-muted/50 p-2 rounded-md cursor-pointer transition-colors"
@@ -132,7 +132,7 @@ export default function Dashboard() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 mt-1">
+                                    <div className="flex items-center gap-4 mt-1 shrink-0">
                                         <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
                                             {format(new Date(event.date_start), 'MMM d, yyyy')}
                                         </div>

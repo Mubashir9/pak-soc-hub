@@ -52,8 +52,8 @@ export function DashboardTaskList({ tasks, events, onTaskDeleted }: DashboardTas
     const totalActive = filteredTasks.length;
 
     return (
-        <Card className="col-span-3">
-            <CardHeader className="flex flex-col space-y-4">
+        <Card className="col-span-3 flex flex-col h-[450px]">
+            <CardHeader className="flex flex-col space-y-4 shrink-0">
                 <div className="flex flex-row items-center justify-between">
                     <CardTitle>Tasks</CardTitle>
                     <div className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full border">
@@ -77,7 +77,7 @@ export function DashboardTaskList({ tasks, events, onTaskDeleted }: DashboardTas
                     </TabsList>
                 </Tabs>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-6">
                 {totalActive === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
                         <div className="bg-primary/10 p-3 rounded-full">
@@ -95,7 +95,7 @@ export function DashboardTaskList({ tasks, events, onTaskDeleted }: DashboardTas
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3">
                         {filteredTasks.map(task => (
                             <TaskItem
                                 key={task.id}
