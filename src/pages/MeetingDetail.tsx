@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import type { Meeting, TeamMember } from '@/types';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useDebounce } from 'use-debounce';
 import {
     ArrowLeft,
     Calendar,
@@ -18,7 +19,8 @@ import {
     ClipboardList,
     Save,
     Pencil,
-    Trash2
+    Trash2,
+    Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -40,6 +42,10 @@ export default function MeetingDetail() {
     const [meeting, setMeeting] = useState<Meeting | undefined>(undefined);
     const [loading, setLoading] = useState(true);
     const [minutes, setMinutes] = useState("");
+    const [debouncedMinutes] = useDebounce(minutes, 1000);
+    const [isSaving, setIsSaving] = useState(false);
+    const initialMinutesLoaded = useRef(false);
+
     const [attendees, setAttendees] = useState<string[]>([]);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
@@ -55,6 +61,10 @@ export default function MeetingDetail() {
                     setMeeting(meetingRes.data);
                     setMinutes(meetingRes.data.minutes || "");
                     setAttendees(meetingRes.data.attendees || []);
+                    // Small timeout to prevent immediate save on initial load
+                    setTimeout(() => {
+                        initialMinutesLoaded.current = true;
+                    }, 1000);
                 }
                 if (teamRes.data) {
                     setTeamMembers(teamRes.data);
@@ -65,8 +75,35 @@ export default function MeetingDetail() {
         }
     }, [id]);
 
+    useEffect(() => {
+        const autoSaveMinutes = async () => {
+            if (!meeting || !initialMinutesLoaded.current) return;
+            // Only save if it actually changed from DB
+            if (debouncedMinutes === meeting.minutes && (meeting.minutes !== undefined || debouncedMinutes === "")) return;
+
+            setIsSaving(true);
+            try {
+                const { error } = await supabase
+                    .from('meetings')
+                    .update({ minutes: debouncedMinutes })
+                    .eq('id', meeting.id);
+
+                if (error) throw error;
+                setMeeting({ ...meeting, minutes: debouncedMinutes });
+            } catch (err) {
+                console.error(err);
+                toast.error("Failed to auto-save minutes");
+            } finally {
+                setIsSaving(false);
+            }
+        };
+
+        autoSaveMinutes();
+    }, [debouncedMinutes, meeting]);
+
     const handleSaveMinutes = async () => {
         if (!meeting) return;
+        setIsSaving(true);
         try {
             const { error } = await supabase
                 .from('meetings')
@@ -79,6 +116,8 @@ export default function MeetingDetail() {
         } catch (err) {
             console.error(err);
             toast.error("Failed to save minutes");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -234,8 +273,12 @@ export default function MeetingDetail() {
 
                 <TabsContent value="minutes" className="mt-6 space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-semibold">Meeting Minutes</h2>
-                        <Button variant="outline" size="sm" className="gap-2" onClick={handleSaveMinutes}>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-semibold">Meeting Minutes</h2>
+                            {isSaving && <div className="flex items-center text-xs text-muted-foreground"><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Saving...</div>}
+                            {!isSaving && meeting?.minutes !== undefined && meeting.minutes === minutes && <div className="text-xs text-muted-foreground">All changes saved</div>}
+                        </div>
+                        <Button variant="outline" size="sm" className="gap-2" onClick={handleSaveMinutes} disabled={isSaving || meeting?.minutes === minutes}>
                             <Save className="h-4 w-4" />
                             Save Changes
                         </Button>

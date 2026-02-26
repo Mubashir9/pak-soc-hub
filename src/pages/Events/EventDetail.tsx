@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import type { Event, Task, InventoryItem, BudgetItem, TeamMember } from '@/types';
 import { KanbanBoard } from '@/features/tasks/KanbanBoard';
@@ -12,14 +12,27 @@ import { CreateEventDialog } from '@/components/events/CreateEventDialog';
 import { ContentBoard } from '@/features/content/ContentBoard';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react';
+import { ArrowLeft, CalendarDays, MapPin, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Separator } from '@/components/ui/separator';
 import { TaskFilters, type TaskFiltersState } from '@/features/tasks/TaskFilters';
+import { toast } from 'sonner';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function EventDetail() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [event, setEvent] = useState<Event | undefined>(undefined);
     const [loading, setLoading] = useState(true);
 
@@ -96,6 +109,23 @@ export default function EventDetail() {
         setEvent(updatedEvent);
     };
 
+    const handleEventDeleted = async () => {
+        if (!event) return;
+        try {
+            const { error } = await supabase
+                .from('events')
+                .delete()
+                .eq('id', event.id);
+
+            if (error) throw error;
+            toast.success("Event deleted successfully");
+            navigate('/events');
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to delete event");
+        }
+    };
+
     const handleInventoryItemCreated = (newItem: InventoryItem) => {
         setInventory((prev) => [...prev, newItem]);
     };
@@ -152,6 +182,29 @@ export default function EventDetail() {
                             onEventUpdated={handleEventUpdated}
                             trigger={<Button variant="outline">Edit Event</Button>}
                         />
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="gap-2">
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the event
+                                        "{event.name}" and remove all related tasks, budget items, and content ideas from our servers.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleEventDeleted} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </div>

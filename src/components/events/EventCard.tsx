@@ -1,5 +1,4 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin, ArrowRight, DollarSign } from "lucide-react";
 import type { Event } from "@/types";
@@ -17,7 +16,6 @@ export function EventCard({ event }: EventCardProps) {
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div>
-                        <Badge variant="secondary" className="mb-2">{event.event_type}</Badge>
                         <CardTitle className="text-xl text-primary">{event.name}</CardTitle>
                     </div>
                     <StatusBadge status={event.status} />

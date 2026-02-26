@@ -1,12 +1,10 @@
 // Shared application types matching Supabase schema
 
 export type EventStatus = 'planning' | 'active' | 'completed' | 'cancelled';
-export type EventType = 'O-Week' | 'Basant' | 'SRC Festival' | 'Coke Studio' | 'General';
 
 export interface Event {
     id: string;
     name: string;
-    event_type: EventType;
     date_start: string;
     date_end?: string;
     location: string;

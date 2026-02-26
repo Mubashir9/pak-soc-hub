@@ -46,7 +46,6 @@ const formSchema = z.object({
     name: z.string().min(2, {
         message: "Event name must be at least 2 characters.",
     }),
-    event_type: z.enum(["O-Week", "Basant", "SRC Festival", "Coke Studio", "General"]),
     date_start: z.date(),
     location: z.string().min(2, {
         message: "Location must be at least 2 characters.",
@@ -77,7 +76,6 @@ export function CreateEventDialog({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: eventToEdit?.name || "",
-            event_type: eventToEdit?.event_type || "General",
             location: eventToEdit?.location || "",
             budget_total: eventToEdit?.budget_total || 0,
             description: eventToEdit?.description || "",
@@ -103,7 +101,6 @@ export function CreateEventDialog({
         if (eventToEdit) {
             const updatedEventData = {
                 name: values.name,
-                event_type: values.event_type,
                 date_start: values.date_start.toISOString(),
                 date_end: values.date_start.toISOString(),
                 location: values.location,
@@ -130,7 +127,6 @@ export function CreateEventDialog({
 
             const newEventData = {
                 name: values.name,
-                event_type: values.event_type,
                 status: autoStatus,
                 date_start: values.date_start.toISOString(),
                 date_end: values.date_start.toISOString(),
@@ -192,37 +188,12 @@ export function CreateEventDialog({
                         />
 
                         <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="event_type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Type</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="General">General</SelectItem>
-                                                <SelectItem value="O-Week">O-Week</SelectItem>
-                                                <SelectItem value="Basant">Basant</SelectItem>
-                                                <SelectItem value="SRC Festival">SRC Festival</SelectItem>
-                                                <SelectItem value="Coke Studio">Coke Studio</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
                             {eventToEdit && (
                                 <FormField
                                     control={form.control}
                                     name="status"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="col-span-2">
                                             <FormLabel>Status</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
