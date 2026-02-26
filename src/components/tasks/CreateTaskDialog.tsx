@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Check, ChevronsUpDown, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -46,6 +47,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
 import { supabase } from '@/lib/supabase';
 import type { Task, TeamMember } from '@/types';
 
@@ -58,6 +60,7 @@ const formSchema = z.object({
     description: z.string().optional(),
     priority: z.enum(["low", "medium", "high"]),
     category: z.enum(["general", "content", "logistics", "food", "props", "sponsors"]),
+    due_date: z.date().optional(),
 });
 
 interface CreateTaskDialogProps {
@@ -97,6 +100,7 @@ export function CreateTaskDialog({
             description: taskToEdit?.description || "",
             priority: taskToEdit?.priority || "medium",
             category: taskToEdit?.category || "general",
+            due_date: taskToEdit?.due_date ? new Date(taskToEdit.due_date) : undefined,
         },
     });
 
@@ -110,6 +114,7 @@ export function CreateTaskDialog({
             priority: values.priority,
             category: values.category,
             description: values.description,
+            due_date: values.due_date ? values.due_date.toISOString() : null,
         };
 
         if (taskToEdit) {
@@ -321,6 +326,45 @@ export function CreateTaskDialog({
                                 )}
                             />
                         </div>
+
+                        <FormField
+                            control={form.control}
+                            name="due_date"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Due Date</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full pl-3 text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {field.value ? (
+                                                        format(field.value, "PPP")
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={field.onChange}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}
